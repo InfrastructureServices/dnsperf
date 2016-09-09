@@ -103,6 +103,9 @@ typedef struct {
 	uint32_t bufsize;
 	bool edns;
 	bool dnssec;
+	bool ecs_zero;
+	bool ecs_fixed;
+	bool ecs_random;
 	perf_dnstsigkey_t *tsigkey;
 	uint32_t max_outstanding;
 	uint32_t max_qps;
@@ -446,6 +449,15 @@ setup(int argc, char **argv, config_t *config)
 	perf_opt_add('D', perf_opt_boolean, NULL,
 		     "set the DNSSEC OK bit (implies EDNS)", NULL,
 		     &config->dnssec);
+	perf_opt_add('X', perf_opt_boolean, NULL,
+		     "send 0/0 in EDNS CLIENT-SUBNET option", NULL,
+		     &config->ecs_zero);
+	perf_opt_add('Y', perf_opt_boolean, NULL,
+		     "send 149.20.64.0/24 in EDNS CLIENT-SUBNET option", NULL,
+		     &config->ecs_fixed);
+	perf_opt_add('Z', perf_opt_boolean, NULL,
+		     "send random/24 in EDNS CLIENT-SUBNET option", NULL,
+		     &config->ecs_random);
 	perf_opt_add('y', perf_opt_string, "[alg:]name:secret",
 		     "the TSIG algorithm, name and secret", NULL,
 		     &tsigkey);
@@ -481,7 +493,8 @@ setup(int argc, char **argv, config_t *config)
 		config->maxruns = 1;
 	perf_datafile_setmaxruns(input, config->maxruns);
 
-	if (config->dnssec)
+	if (config->dnssec || config->ecs_zero || config->ecs_fixed ||
+	    config->ecs_random)
 		config->edns = true;
 
 	if (tsigkey != NULL)
@@ -645,7 +658,11 @@ do_send(void *arg)
 		result = perf_dns_buildrequest(tinfo->dnsctx,
 					       (isc_textregion_t *) &used,
 					       qid, config->edns,
-					       config->dnssec, config->tsigkey,
+					       config->dnssec,
+					       config->ecs_zero,
+					       config->ecs_fixed,
+					       config->ecs_random,
+					       config->tsigkey,
 					       &msg);
 		if (result != ISC_R_SUCCESS) {
 			LOCK(&tinfo->lock);

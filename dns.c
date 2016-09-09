@@ -301,7 +301,10 @@ perf_dns_destroytsigkey(perf_dnstsigkey_t **tsigkeyp)
  * Appends an OPT record to the packet.
  */
 static isc_result_t
-add_edns(isc_buffer_t *packet, bool dnssec) {
+add_edns(isc_buffer_t *packet, bool dnssec,
+	 bool ecs_zero, bool ecs_fixed,
+	 bool ecs_random)
+{
 	unsigned char *base;
 
 	if (isc_buffer_availablelength(packet) < EDNSLEN) {
@@ -320,7 +323,62 @@ add_edns(isc_buffer_t *packet, bool dnssec) {
 		isc_buffer_putuint16(packet, 0x8000);
 	else
 		isc_buffer_putuint16(packet, 0);
-	isc_buffer_putuint16(packet, 0);		/* rdlen */
+	if (!ecs_zero && !ecs_fixed && !ecs_random) {
+		isc_buffer_putuint16(packet, 0);		/* rdlen */
+	} else {
+		if (ecs_zero) {
+			/* rdlen */
+			isc_buffer_putuint16(packet, 8);
+			/* CLIENT-SUBNET option code */
+			isc_buffer_putuint16(packet, 0x0008);
+			/* CLIENT-SUBNET option length */
+			isc_buffer_putuint16(packet, 4);
+			/* FAMILY=IPv4 */
+			isc_buffer_putuint16(packet, 0x0001);
+			/* SOURCE PREFIX-LENGTH=0 */
+			isc_buffer_putuint8(packet, 0);
+			/* SCOPE PREFIX-LENGTH=0 */
+			isc_buffer_putuint8(packet, 0);
+		} else if (ecs_fixed) {
+			/* rdlen */
+			isc_buffer_putuint16(packet, 11);
+			/* CLIENT-SUBNET option code */
+			isc_buffer_putuint16(packet, 0x0008);
+			/* CLIENT-SUBNET option length */
+			isc_buffer_putuint16(packet, 7);
+			/* FAMILY=IPv4 */
+			isc_buffer_putuint16(packet, 0x0001);
+			/* SOURCE PREFIX-LENGTH=24 */
+			isc_buffer_putuint8(packet, 24);
+			/* SCOPE PREFIX-LENGTH=0 */
+			isc_buffer_putuint8(packet, 0);
+			isc_buffer_putuint8(packet, 149);
+			isc_buffer_putuint8(packet, 20);
+			isc_buffer_putuint8(packet, 64);
+		} else {
+			unsigned long r;
+
+			/* rdlen */
+			isc_buffer_putuint16(packet, 11);
+			/* CLIENT-SUBNET option code */
+			isc_buffer_putuint16(packet, 0x0008);
+			/* CLIENT-SUBNET option length */
+			isc_buffer_putuint16(packet, 7);
+			/* FAMILY=IPv4 */
+			isc_buffer_putuint16(packet, 0x0001);
+			/* SOURCE PREFIX-LENGTH=24 */
+			isc_buffer_putuint8(packet, 24);
+			/* SCOPE PREFIX-LENGTH=0 */
+			isc_buffer_putuint8(packet, 0);
+
+			r = (unsigned long) random();
+			isc_buffer_putuint8(packet, r & 0xff);
+			r >>= 8;
+			isc_buffer_putuint8(packet, r & 0xff);
+			r >>= 8;
+			isc_buffer_putuint8(packet, r & 0xff);
+		}
+	}
 
 	base[11]++;				/* increment record count */
 
@@ -805,6 +863,8 @@ isc_result_t
 perf_dns_buildrequest(perf_dnsctx_t *ctx, const isc_textregion_t *record,
 		      uint16_t qid,
 		      bool edns, bool dnssec,
+		      bool ecs_zero, bool ecs_fixed,
+		      bool ecs_random,
 		      perf_dnstsigkey_t *tsigkey, isc_buffer_t *msg)
 {
 	unsigned int flags;
@@ -832,7 +892,7 @@ perf_dns_buildrequest(perf_dnsctx_t *ctx, const isc_textregion_t *record,
 		return (result);
 
 	if (edns) {
-		result = add_edns(msg, dnssec);
+		result = add_edns(msg, dnssec, ecs_zero, ecs_fixed, ecs_random);
 		if (result != ISC_R_SUCCESS)
 			return (result);
 	}

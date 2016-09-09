@@ -110,6 +110,9 @@ static int *socks;
 static uint64_t query_timeout;
 static bool edns;
 static bool dnssec;
+static bool ecs_zero;
+static bool ecs_fixed;
+static bool ecs_random;
 
 static perf_datafile_t *input;
 
@@ -271,6 +274,15 @@ setup(int argc, char **argv)
 		     "enable EDNS 0", NULL, &edns);
 	perf_opt_add('D', perf_opt_boolean, NULL,
 		     "set the DNSSEC OK bit (implies EDNS)", NULL, &dnssec);
+	perf_opt_add('X', perf_opt_boolean, NULL,
+		     "send 0/0 in EDNS CLIENT-SUBNET option", NULL,
+		     &ecs_zero);
+	perf_opt_add('Y', perf_opt_boolean, NULL,
+		     "send 149.20.64.0/24 in EDNS CLIENT-SUBNET option", NULL,
+		     &ecs_fixed);
+	perf_opt_add('Z', perf_opt_boolean, NULL,
+		     "send random/24 in EDNS CLIENT-SUBNET option", NULL,
+		     &ecs_random);
 	perf_opt_add('y', perf_opt_string, "[alg:]name:secret",
 		     "the TSIG algorithm, name and secret", NULL,
 		     &tsigkey_str);
@@ -329,7 +341,7 @@ setup(int argc, char **argv)
 
 	input = perf_datafile_open(mctx, filename);
 
-	if (dnssec)
+	if (dnssec || ecs_zero || ecs_fixed || ecs_random)
 		edns = true;
 
 	if (tsigkey_str != NULL)
@@ -476,7 +488,9 @@ do_one_line(isc_buffer_t *lines, isc_buffer_t *msg) {
 
 	isc_buffer_clear(msg);
 	result = perf_dns_buildrequest(NULL, (isc_textregion_t *) &used,
-				       qid, edns, dnssec, tsigkey, msg);
+				       qid, edns, dnssec,
+				       ecs_zero, ecs_fixed, ecs_random,
+				       tsigkey, msg);
 	if (result != ISC_R_SUCCESS)
 		return (result);
 

@@ -64,6 +64,8 @@ isc_result_t
 perf_dns_buildrequest(perf_dnsctx_t *ctx, const isc_textregion_t *record,
 		      uint16_t qid,
 		      bool edns, bool dnssec,
+		      bool ecs_zero, bool ecs_fixed,
+		      bool ecs_random,
 		      perf_dnstsigkey_t *tsigkey, isc_buffer_t *msg);
 
 #endif
