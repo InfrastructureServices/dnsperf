@@ -81,7 +81,7 @@ track of response rates, failure rates, and latencies. It will also continue
 listening for responses for an additional 40 seconds after it has stopped
 sending traffic, so that there is time for the server to respond to the last
 queries sent. This time period was chosen to be longer than the overall
-query timeout of both Nominum CacheServe and current versions of BIND.
+query timeout of both Nominum Vantio and current versions of BIND.
 
 If the test is successful, the query rate will at some point exceed the
 capacity of the server and queries will be dropped, causing the response
@@ -91,13 +91,13 @@ The result of the test is a set of measurements of the query rate, response
 rate, failure response rate, and average query latency as functions of time.
 .SS "What you will need"
 Benchmarking a live caching server is serious business. A fast caching
-server like Nominum CacheServe, resolving a mix of cacheable and
-non-cacheable queries typical of ISP customer traffic, is capable of
-resolving well over 1,000,000 queries per second. In the process, it will
-send more than 40,000 queries per second to authoritative servers on the
-Internet, and receive responses to most of them. Assuming an average request
-size of 50 bytes and a response size of 150 bytes, this amounts to some 1216
-Mbps of outgoing and 448 Mbps of incoming traffic. If your Internet
+server like Nominum Vantio running on a XEON server, resolving a mix of
+cacheable and non-cacheable queries typical of ISP customer traffic, is
+capable of resolving over 100,000 queries per second. In the process, it
+will send more than 40,000 queries per second to authoritative servers on
+the Internet, and receive responses to most of them. Assuming an average
+request size of 50 bytes and a response size of 150 bytes, this amounts to
+some 16 Mbps of outgoing and 48 Mbps of incoming traffic. If your Internet
 connection can't handle the bandwidth, you will end up measuring the speed
 of the connection, not the server, and may saturate the connection causing a
 degradation in service for other users.
@@ -136,11 +136,11 @@ will use up to 3 million queries in each test run.
 
 If the caching server to be tested has a configurable limit on the number of
 simultaneous resolutions, like the \fBmax\-recursive\-clients\fR statement
-in Nominum CacheServe or the \fBrecursive\-clients\fR option in BIND 9, you
-will probably have to increase it. As a starting point, we recommend a value
-of 10000 for Nominum CacheServe and 100000 for BIND 9. Should the limit be
-reached, it will show up in the plots as an increase in the number of
-failure responses.
+in Nominum Vantio or the \fBrecursive\-clients\fR option in BIND 9, you will
+probably have to increase it. As a starting point, we recommend a value of
+10000 for Nominum Vantio and 100000 for BIND 9. Should the limit be reached,
+it will show up in the plots as an increase in the number of failure
+responses.
 
 The server being tested should be restarted at the beginning of each test to
 make sure it is starting with an empty cache. If the cache already contains
@@ -257,8 +257,8 @@ proportionally.
 If the "Failure responses received per second" graph turns sharply upwards,
 this can be another indication that the load has exceeded the server's
 capacity. This will happen if the server reacts to overload by sending
-SERVFAIL responses rather than by dropping queries. Since Nominum CacheServe
-and BIND 9 will both respond with SERVFAIL when they exceed their
+SERVFAIL responses rather than by dropping queries. Since Nominum Vantio and
+BIND 9 will both respond with SERVFAIL when they exceed their
 \fBmax\-recursive\-clients\fR or \fBrecursive\-clients\fR limit,
 respectively, a sudden increase in the number of failures could mean that
 the limit needs to be increased.

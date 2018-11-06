@@ -13,7 +13,6 @@
 [\fB\-d\ \fIdatafile\fB\fR]
 [\fB\-D\fR]
 [\fB\-e\fR]
-[\fB\-E\ \fIcode:secret\fB\fR]
 [\fB\-f\ \fIfamily\fB\fR]
 [\fB\-h\fR]
 [\fB\-l\ \fIlimit\fB\fR]
@@ -188,14 +187,6 @@ EDNS0, which is required for DNSSEC.
 .br
 .RS
 Enables EDNS0 [RFC2671], by adding an OPT record to all packets sent.
-.RE
-
-\fB-E \fIcode:value\fB\fR
-.br
-.RS
-Add an EDNS [RFC2671] option to all packets sent, using the specified
-numeric option code and value expressed as a a hex-encoded string. This also
-enables EDNS0.
 .RE
 
 \fB-f \fIfamily\fB\fR
